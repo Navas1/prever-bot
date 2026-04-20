@@ -20,7 +20,7 @@ function getUser(id, nome) {
 
 bot.onText(/\/start/, msg => {
   const u = getUser(msg.from.id, msg.from.first_name);
-  bot.sendMessage(msg.chat.id, `🎯 Bem-vindo ao Prever Bot, ${u.nome}!\nSaldo: ${u.saldo} pts\n\nUse /mercados para ver apostas abertas.`);
+  bot.sendMessage(msg.chat.id, `🎯 Bem-vindo ao Prever Bot, ${u.nome}!\nSaldo: ${u.saldo} pts\n\nUse /mercados para ver apostas abertas.\n\nPara apostar: _#1 10 sim_ ou _#2 50 nao_`, { parse_mode: 'Markdown' });
 });
 
 bot.onText(/\/saldo/, msg => {
@@ -32,7 +32,7 @@ bot.onText(/\/mercados/, msg => {
   const abertos = mercados.filter(m => m.status === 'aberto');
   if (!abertos.length) return bot.sendMessage(msg.chat.id, 'Nenhum mercado aberto.');
   let txt = '📊 *Mercados abertos:*\n\n';
-  abertos.forEach(m => { txt += `#${m.id} ${m.pergunta}\n✅ SIM: ${m.sim}% | ❌ NÃO: ${m.nao}%\nResponda: _10 sim_ ou _10 nao_\n\n`; });
+  abertos.forEach(m => { txt += `#${m.id} ${m.pergunta}\n✅ SIM: ${m.sim}% | ❌ NÃO: ${m.nao}%\nAposte: _#${m.id} 10 sim_ ou _#${m.id} 10 nao_\n\n`; });
   bot.sendMessage(msg.chat.id, txt, { parse_mode: 'Markdown' });
 });
 
@@ -43,16 +43,17 @@ bot.onText(/\/ranking/, msg => {
   bot.sendMessage(msg.chat.id, txt, { parse_mode: 'Markdown' });
 });
 
-bot.onText(/^(\d+)\s+(sim|nao)$/i, (msg, match) => {
+bot.onText(/^#(\d+)\s+(\d+)\s+(sim|nao)$/i, (msg, match) => {
   const u = getUser(msg.from.id, msg.from.first_name);
-  const valor = parseInt(match[1]);
-  const lado = match[2].toLowerCase();
-  const abertos = mercados.filter(m => m.status === 'aberto');
-  if (!abertos.length) return bot.sendMessage(msg.chat.id, 'Nenhum mercado aberto.');
+  const mercadoId = parseInt(match[1]);
+  const valor = parseInt(match[2]);
+  const lado = match[3].toLowerCase();
+  const m = mercados.find(m => m.id === mercadoId && m.status === 'aberto');
+  if (!m) return bot.sendMessage(msg.chat.id, `❌ Mercado #${mercadoId} não encontrado ou já encerrado.`);
   if (u.saldo < valor) return bot.sendMessage(msg.chat.id, `❌ Saldo insuficiente. Você tem ${u.saldo} pts.`);
   u.saldo -= valor;
-  posicoes.push({ userId: msg.from.id, mercadoId: abertos[0].id, lado, valor });
-  bot.sendMessage(msg.chat.id, `✅ Aposta de ${valor} pts em *${lado.toUpperCase()}* no mercado #${abertos[0].id}!\n\n💰 Saldo restante: *${u.saldo} pts*`, { parse_mode: 'Markdown' });
+  posicoes.push({ userId: msg.from.id, mercadoId, lado, valor });
+  bot.sendMessage(msg.chat.id, `✅ Aposta de ${valor} pts em *${lado.toUpperCase()}* no mercado #${mercadoId}!\n📋 ${m.pergunta}\n\n💰 Saldo restante: *${u.saldo} pts*`, { parse_mode: 'Markdown' });
 });
 
 console.log('🚀 Prever bot iniciado!');
