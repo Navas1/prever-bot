@@ -1,4 +1,3 @@
-
 const TelegramBot = require('node-telegram-bot-api');
 
 const TOKEN = process.env.TELEGRAM_TOKEN;
@@ -50,10 +49,10 @@ bot.onText(/^(\d+)\s+(sim|nao)$/i, (msg, match) => {
   const lado = match[2].toLowerCase();
   const abertos = mercados.filter(m => m.status === 'aberto');
   if (!abertos.length) return bot.sendMessage(msg.chat.id, 'Nenhum mercado aberto.');
-  if (u.saldo < valor) return bot.sendMessage(msg.chat.id, '❌ Saldo insuficiente.');
+  if (u.saldo < valor) return bot.sendMessage(msg.chat.id, `❌ Saldo insuficiente. Você tem ${u.saldo} pts.`);
   u.saldo -= valor;
   posicoes.push({ userId: msg.from.id, mercadoId: abertos[0].id, lado, valor });
-  bot.sendMessage(msg.chat.id, `✅ Aposta de ${valor} pts em *${lado.toUpperCase()}*!`, { parse_mode: 'Markdown' });
+  bot.sendMessage(msg.chat.id, `✅ Aposta de ${valor} pts em *${lado.toUpperCase()}* no mercado #${abertos[0].id}!\n\n💰 Saldo restante: *${u.saldo} pts*`, { parse_mode: 'Markdown' });
 });
 
 console.log('🚀 Prever bot iniciado!');
